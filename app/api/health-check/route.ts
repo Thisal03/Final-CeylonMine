@@ -1,18 +1,25 @@
 import { NextResponse } from "next/server";
 
-const OPENROUTER_API_KEY = "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";
+const apiKey = process.env.DEEPSEEK_API_KEY;
 const SITE_URL = "https://your-site-url.com"; // Optional, update as needed
 const SITE_TITLE = "CeylonMine"; // Optional, update as needed
 
 const headers = {
   "Content-Type": "application/json",
-  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+  "Authorization": `Bearer ${apiKey}`,
   "HTTP-Referer": SITE_URL,
   "X-Title": SITE_TITLE,
 };
 
 export async function GET() {
   try {
+    if (!apiKey) {
+      return NextResponse.json(
+        { status: "unavailable", error: "DeepSeek API key is not configured" },
+        { status: 503 }
+      );
+    }
+
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers,
@@ -25,8 +32,9 @@ export async function GET() {
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { status: "unavailable", error: "DeepSeek API unavailable" },
+        { status: "unavailable", error: errorData.error?.message || "DeepSeek API unavailable", details: errorData },
         { status: 503 }
       );
     }
@@ -37,6 +45,7 @@ export async function GET() {
       {
         status: "unavailable",
         error: error?.message || "Unknown error occurred",
+        details: typeof error === "object" ? JSON.stringify(error) : error,
       },
       { status: 503 }
     );

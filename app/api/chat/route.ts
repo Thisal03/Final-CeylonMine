@@ -6,19 +6,26 @@ interface Message {
   content: string;
 }
 
-const OPENROUTER_API_KEY = "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";
+const apiKey = process.env.DEEPSEEK_API_KEY;
 const SITE_URL = "https://your-site-url.com"; // Optional, update as needed
 const SITE_TITLE = "CeylonMine"; // Optional, update as needed
 
 const headers = {
   "Content-Type": "application/json",
-  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+  "Authorization": `Bearer ${apiKey}`,
   "HTTP-Referer": SITE_URL,
   "X-Title": SITE_TITLE,
 };
 
 export async function POST(request: Request) {
   try {
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "DeepSeek API key is not configured" },
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await request.json();
     const { messages, input } = body;
 
@@ -29,7 +36,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Format messages for DeepSeek
     const formattedMessages = [
       { role: "system", content: SYSTEM_PROMPT },
       ...(messages || []).map((msg: Message) => ({
@@ -49,9 +55,9 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { error: errorData.error || "Failed to get response from DeepSeek" },
+        { error: errorData.error?.message || "Failed to get response from DeepSeek", details: errorData },
         { status: response.status, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -71,10 +77,16 @@ export async function POST(request: Request) {
       { headers: { "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    let message = "Failed to generate response";
+    if (error && typeof error === "object" && "message" in error) {
+      message = error.message;
+    } else if (typeof error === "string") {
+      message = error;
+    }
     return NextResponse.json(
       {
-        error: "Failed to generate response",
-        details: error.message || "Unknown error occurred",
+        error: message || "Unknown error occurred",
+        details: typeof error === "object" ? JSON.stringify(error) : error,
       },
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
