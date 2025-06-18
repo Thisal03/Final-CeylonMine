@@ -1,22 +1,38 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+
+const OPENROUTER_API_KEY = "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";
+const SITE_URL = "https://your-site-url.com"; // Optional, update as needed
+const SITE_TITLE = "CeylonMine"; // Optional, update as needed
+
+const headers = {
+  "Content-Type": "application/json",
+  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+  "HTTP-Referer": SITE_URL,
+  "X-Title": SITE_TITLE,
+};
 
 export async function GET() {
   try {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "deepseek/deepseek-r1-0528:free",
+        messages: [
+          { role: "user", content: "test" }
+        ]
+      }),
     });
 
-    // Send a minimal request to check if the API is responsive
-    await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: "test" }],
-      max_tokens: 1,
-    });
+    if (!response.ok) {
+      return NextResponse.json(
+        { status: "unavailable", error: "DeepSeek API unavailable" },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json({ status: "available" }, { status: 200 });
   } catch (error: any) {
-    console.error("OpenAI API Health Check Failed:", error);
     return NextResponse.json(
       {
         status: "unavailable",

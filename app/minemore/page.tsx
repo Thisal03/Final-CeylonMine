@@ -875,72 +875,72 @@ export default function MiningEducation() {
   ];
 
   // Initialize 3D sand effect
-  useEffect(() => {
-    if (!canvasRef.current) return;
+  // useEffect(() => {
+  //   if (!canvasRef.current) return;
 
-    // Set up Three.js scene
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-    });
+  //   // Set up Three.js scene
+  //   const scene = new THREE.Scene();
+  //   sceneRef.current = scene;
+  //   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  //   const renderer = new THREE.WebGLRenderer({
+  //     canvas: canvasRef.current,
+  //     alpha: true,
+  //   });
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  //   renderer.setSize(window.innerWidth, window.innerHeight);
+  //   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+  //   const particlesGeometry = new THREE.BufferGeometry();
+  //   const particlesCount = 5000;
+  //   const posArray = new Float32Array(particlesCount * 3);
+  //   for (let i = 0; i < particlesCount * 3; i++) {
+  //     posArray[i] = (Math.random() - 0.5) * 5;
+  //   }
+  //   particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.005,
-      color: isDarkMode ? 0xD2B48C : 0x555555,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
+  //   const particlesMaterial = new THREE.PointsMaterial({
+  //     size: 0.005,
+  //     color: isDarkMode ? 0xD2B48C : 0x555555,
+  //     transparent: true,
+  //     blending: THREE.AdditiveBlending,
+  //   });
 
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
+  //   const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+  //   scene.add(particlesMesh);
 
-    camera.position.z = 2;
+  //   camera.position.z = 2;
 
-    let mouseX = 0;
-    let mouseY = 0;
-    function onDocumentMouseMove(event: MouseEvent) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 100;
-      mouseY = (event.clientY - window.innerHeight / 2) / 100;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
+  //   let mouseX = 0;
+  //   let mouseY = 0;
+  //   function onDocumentMouseMove(event: MouseEvent) {
+  //     mouseX = (event.clientX - window.innerWidth / 2) / 100;
+  //     mouseY = (event.clientY - window.innerHeight / 2) / 100;
+  //   }
+  //   document.addEventListener('mousemove', onDocumentMouseMove);
 
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
+  //   function onWindowResize() {
+  //     camera.aspect = window.innerWidth / window.innerHeight;
+  //     camera.updateProjectionMatrix();
+  //     renderer.setSize(window.innerWidth, window.innerHeight);
+  //   }
+  //   window.addEventListener('resize', onWindowResize);
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0005 + mouseY * 0.0005;
-      particlesMesh.rotation.y += 0.0005 + mouseX * 0.0005;
-      renderer.render(scene, camera);
-    };
-    animate();
+  //   const animate = () => {
+  //     requestAnimationFrame(animate);
+  //     particlesMesh.rotation.x += 0.0005 + mouseY * 0.0005;
+  //     particlesMesh.rotation.y += 0.0005 + mouseX * 0.0005;
+  //     renderer.render(scene, camera);
+  //   };
+  //   animate();
 
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
-    };
-  }, [isDarkMode]); // Add isDarkMode to dependency array
+  //   return () => {
+  //     document.removeEventListener('mousemove', onDocumentMouseMove);
+  //     window.removeEventListener('resize', onWindowResize);
+  //     particlesGeometry.dispose();
+  //     particlesMaterial.dispose();
+  //     renderer.dispose();
+  //   };
+  // }, [isDarkMode]); // Add isDarkMode to dependency array
 
   // Course slider navigation
   const nextSlide = () => {

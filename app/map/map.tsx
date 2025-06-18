@@ -8,7 +8,7 @@ export default function Home() {
 
   useEffect(() => {
     // Listen for theme changes from navbar
-    const handleThemeChange = (event) => {
+    const handleThemeChange = (event: CustomEvent) => {
       setIsDarkMode(event.detail.isDarkMode);
     };
 

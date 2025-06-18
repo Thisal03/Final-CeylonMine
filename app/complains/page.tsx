@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import Navbar from "../navbar/page";
-import * as THREE from 'three';
+// import * as THREE from 'three';
 import { motion } from 'framer-motion';
 
 export default function ComplaintForm() {
@@ -52,94 +52,6 @@ export default function ComplaintForm() {
       window.removeEventListener('languageChange', handleLanguageChange as EventListener);
     };
   }, []);
-
-  // Effect for the particles background - refined for better performance
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-    });
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    // Optimized particle count
-    const particlesCount = 2000;
-    const posArray = new Float32Array(particlesCount * 3);
-
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(posArray, 3)
-    );
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.006,
-      color: isDarkMode ? 0xD2B48C : 0xFFD700,
-      transparent: true,
-      opacity: 0.7,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    camera.position.z = 2;
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    function onDocumentMouseMove(event: MouseEvent) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 200;
-      mouseY = (event.clientY - window.innerHeight / 2) / 200;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0001 + mouseY * 0.0001;
-      particlesMesh.rotation.y += 0.0001 + mouseX * 0.0001;
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const updateParticleColor = () => {
-      particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-    };
-
-    const themeChangeListener = () => {
-      updateParticleColor();
-    };
-    window.addEventListener('themeChange', themeChangeListener);
-
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      window.removeEventListener('themeChange', themeChangeListener);
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
-    };
-  }, [isDarkMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

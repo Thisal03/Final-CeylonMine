@@ -64,90 +64,90 @@ export default function Signup() {
   }, []);
 
   // Three.js Sand (Particle) Effect
-  useEffect(() => {
-    if (!canvasRef.current) return;
+  // useEffect(() => {
+  //   if (!canvasRef.current) return;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-    });
+  //   const scene = new THREE.Scene();
+  //   const camera = new THREE.PerspectiveCamera(
+  //     75,
+  //     window.innerWidth / window.innerHeight,
+  //     0.1,
+  //     1000
+  //   );
+  //   const renderer = new THREE.WebGLRenderer({
+  //     canvas: canvasRef.current,
+  //     alpha: true,
+  //   });
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  //   renderer.setSize(window.innerWidth, window.innerHeight);
+  //   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
+  //   const particlesGeometry = new THREE.BufferGeometry();
+  //   const particlesCount = 5000;
+  //   const posArray = new Float32Array(particlesCount * 3);
 
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(posArray, 3)
-    );
+  //   for (let i = 0; i < particlesCount * 3; i++) {
+  //     posArray[i] = (Math.random() - 0.5) * 5;
+  //   }
+  //   particlesGeometry.setAttribute(
+  //     'position',
+  //     new THREE.BufferAttribute(posArray, 3)
+  //   );
 
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.004,
-      color: isDarkMode ? 0xD2B48C : 0xFFD700, // Sand color
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
+  //   const particlesMaterial = new THREE.PointsMaterial({
+  //     size: 0.004,
+  //     color: isDarkMode ? 0xD2B48C : 0xFFD700, // Sand color
+  //     transparent: true,
+  //     blending: THREE.AdditiveBlending,
+  //   });
 
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
+  //   const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+  //   scene.add(particlesMesh);
 
-    camera.position.z = 2;
+  //   camera.position.z = 2;
 
-    let mouseX = 0;
-    let mouseY = 0;
+  //   let mouseX = 0;
+  //   let mouseY = 0;
 
-    function onDocumentMouseMove(event: MouseEvent) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 100;
-      mouseY = (event.clientY - window.innerHeight / 2) / 100;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
+  //   function onDocumentMouseMove(event: MouseEvent) {
+  //     mouseX = (event.clientX - window.innerWidth / 2) / 100;
+  //     mouseY = (event.clientY - window.innerHeight / 2) / 100;
+  //   }
+  //   document.addEventListener('mousemove', onDocumentMouseMove);
 
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
+  //   function onWindowResize() {
+  //     camera.aspect = window.innerWidth / window.innerHeight;
+  //     camera.updateProjectionMatrix();
+  //     renderer.setSize(window.innerWidth, window.innerHeight);
+  //   }
+  //   window.addEventListener('resize', onWindowResize);
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002; // Slowed down rotation
-      particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002; // Slowed down rotation
-      renderer.render(scene, camera);
-    };
-    animate();
+  //   const animate = () => {
+  //     requestAnimationFrame(animate);
+  //     particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002; // Slowed down rotation
+  //     particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002; // Slowed down rotation
+  //     renderer.render(scene, camera);
+  //   };
+  //   animate();
 
-    const updateParticleColor = () => {
-      particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-    };
+  //   const updateParticleColor = () => {
+  //     particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
+  //   };
 
-    const themeChangeListener = () => {
-      updateParticleColor();
-    };
-    window.addEventListener('themeChange', themeChangeListener);
+  //   const themeChangeListener = () => {
+  //     updateParticleColor();
+  //   };
+  //   window.addEventListener('themeChange', themeChangeListener);
 
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      window.removeEventListener('themeChange', themeChangeListener);
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
-    };
-  }, [isDarkMode]);
+  //   return () => {
+  //     document.removeEventListener('mousemove', onDocumentMouseMove);
+  //     window.removeEventListener('resize', onWindowResize);
+  //     window.removeEventListener('themeChange', themeChangeListener);
+  //     particlesGeometry.dispose();
+  //     particlesMaterial.dispose();
+  //     renderer.dispose();
+  //   };
+  // }, [isDarkMode]);
 
   const translations = {
     en: {

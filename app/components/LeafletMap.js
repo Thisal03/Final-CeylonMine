@@ -153,7 +153,7 @@ const LeafletMap = ({ isDarkMode }) => {
       };
 
       const fetchLocations = () => {
-        fetch("https://ceylonminebackend.up.railway.app/map/get", {
+        fetch("/api/map", {
           method: 'GET',
           headers: {
             'Accept': 'application/json',

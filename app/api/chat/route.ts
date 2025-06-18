@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { SYSTEM_PROMPT } from "@/app/minebot/prompt";
 
@@ -7,105 +6,77 @@ interface Message {
   content: string;
 }
 
-// Ensure API key is available
-if (!process.env.OPENAI_API_KEY) {
-  console.error("OPENAI_API_KEY is not set");
-}
+const OPENROUTER_API_KEY = "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";
+const SITE_URL = "https://your-site-url.com"; // Optional, update as needed
+const SITE_TITLE = "CeylonMine"; // Optional, update as needed
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Common headers for all responses
 const headers = {
   "Content-Type": "application/json",
-  "Cache-Control": "no-store, no-cache, must-revalidate",
+  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+  "HTTP-Referer": SITE_URL,
+  "X-Title": SITE_TITLE,
 };
 
 export async function POST(request: Request) {
   try {
-    // Check API key
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: "OpenAI API key is not configured" },
-        { status: 500, headers }
-      );
-    }
-
     const body = await request.json();
     const { messages, input } = body;
 
     if (!input) {
       return NextResponse.json(
         { error: "Input message is required" },
-        { status: 400, headers }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Received message:", input);
-
-    // Format messages for OpenAI
+    // Format messages for DeepSeek
     const formattedMessages = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map((msg: Message) => ({
+      ...(messages || []).map((msg: Message) => ({
         role: msg.role,
         content: msg.content,
       })),
       { role: "user", content: input },
     ];
 
-    console.log("Sending request to OpenAI...");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: formattedMessages,
-      temperature: 0.7,
-      max_tokens: 1000,
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "deepseek/deepseek-r1-0528:free",
+        messages: formattedMessages,
+      }),
     });
 
-    const response = completion.choices[0]?.message?.content;
-
-    if (!response) {
+    if (!response.ok) {
+      const errorData = await response.json();
       return NextResponse.json(
-        { error: "Empty response from OpenAI API" },
-        { status: 500, headers }
+        { error: errorData.error || "Failed to get response from DeepSeek" },
+        { status: response.status, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Received response from OpenAI");
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content;
+
+    if (!reply) {
+      return NextResponse.json(
+        { error: "Empty response from DeepSeek API" },
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return NextResponse.json(
-      { message: { role: "assistant", content: response } },
-      { headers }
+      { message: { role: "assistant", content: reply } },
+      { headers: { "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Error in chat API:", error);
-
-    if (error.name === "SyntaxError") {
-      return NextResponse.json(
-        {
-          error: "Invalid JSON in request body",
-          details: error.message,
-        },
-        { status: 400, headers }
-      );
-    }
-
-    if (error.status === 401 || error.status === 403) {
-      return NextResponse.json(
-        {
-          error: "Authentication error with OpenAI",
-          details: error.message,
-        },
-        { status: error.status, headers }
-      );
-    }
-
     return NextResponse.json(
       {
         error: "Failed to generate response",
         details: error.message || "Unknown error occurred",
       },
-      { status: 500, headers }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
