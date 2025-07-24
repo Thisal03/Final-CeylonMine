@@ -7,6 +7,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import * as THREE from 'three';
 import Cookies from 'js-cookie';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 // Update the interfaces to match backend responses
 interface ApplicationDetails {
@@ -58,7 +59,15 @@ const getStatusNumber = (status: string): number => {
   return statusMap[status.toLowerCase()] || 1;
 };
 
-export default function LicenseTracking() {
+export default function UnlicensePageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LicenseTracking />
+    </Suspense>
+  );
+}
+
+export function LicenseTracking() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [language, setLanguage] = useState('en');
   const canvasRef = useRef(null);
