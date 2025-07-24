@@ -124,92 +124,6 @@ export default function TypeALicense() {
     };
   }, []);
 
-  // Three.js Sand (Particle) Effect
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-    });
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
-
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(posArray, 3)
-    );
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.004,
-      color: isDarkMode ? 0xD2B48C : 0xFFD700, // Sand color
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    camera.position.z = 2;
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    function onDocumentMouseMove(event: MouseEvent) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 100;
-      mouseY = (event.clientY - window.innerHeight / 2) / 100;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002; // Slowed down rotation
-      particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002; // Slowed down rotation
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const updateParticleColor = () => {
-      particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-    };
-
-    const themeChangeListener = () => {
-      updateParticleColor();
-    };
-    window.addEventListener('themeChange', themeChangeListener);
-
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      window.removeEventListener('themeChange', themeChangeListener);
-      if (particlesGeometry) particlesGeometry.dispose();
-      if (particlesMaterial) particlesMaterial.dispose();
-      if (renderer) renderer.dispose();
-    };
-  }, [isDarkMode]);
-
   // Validation function
   const validateField = (name: string, value: string | File | null): string => {
     if (!value && name !== 'articles_of_association') { // Skip validation for optional files
@@ -346,8 +260,6 @@ export default function TypeALicense() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form before submission
     if (!validateForm()) {
       await Swal.fire({
         title: 'Validation Error',
@@ -358,62 +270,20 @@ export default function TypeALicense() {
         background: isDarkMode ? '#1f2937' : '#ffffff',
         color: isDarkMode ? '#ffffff' : '#333333',
         iconColor: isDarkMode ? '#ef4444' : '#dc2626',
-        showClass: {
-          popup: 'animate__animated animate__fadeInUp animate__faster'
-        },
-        hideClass: {
-          popup: 'animate__animated animate__fadeOutDown animate__faster'
-        }
       });
       return;
     }
-
-    const data = new FormData();
-    
-    // Add license type
-    data.append('licenseType', 'type-a');
-    
-    // Helper function to append nested objects
-    const appendNestedObject = (prefix: string, obj: Partial<FormData>) => {
-      Object.entries(obj).forEach(([key, value]) => {
-        const fullKey = prefix ? `${prefix}[${key}]` : key;
-        
-        if (value instanceof File) {
-          data.append(fullKey, value);
-        } else if (value && typeof value === 'object') {
-          appendNestedObject(fullKey, value);
-        } else if (value !== null && value !== undefined) {
-          data.append(fullKey, value.toString());
-        }
-      });
-    };
-
-    // Append all form data
-    appendNestedObject('', formData);
-
     try {
-      // Show loading state
-      Swal.fire({
-        title: 'Submitting Application',
-        text: 'Please wait while we process your application...',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        showConfirmButton: false,
-        willOpen: () => {
-          Swal.showLoading();
-        }
-      });
-
-      const response = await fetch('https://ceylonminebackend.up.railway.app/license/submit', {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) throw new Error('User not logged in');
+      const payload = { ...formData, miner_id: user.id, category: 'D' };
+      const response = await fetch('/api/application/submit', {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-        },
-        body: data,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-      
+      const result = await response.json();
       if (response.ok) {
-        // Success message
         await Swal.fire({
           title: 'Success!',
           text: 'Your license application has been submitted successfully.',
@@ -423,71 +293,20 @@ export default function TypeALicense() {
           background: isDarkMode ? '#1f2937' : '#ffffff',
           color: isDarkMode ? '#ffffff' : '#333333',
           iconColor: isDarkMode ? '#fbbf24' : '#f97316',
-          showClass: {
-            popup: 'animate__animated animate__fadeInUp animate__faster'
-          },
-          hideClass: {
-            popup: 'animate__animated animate__fadeOutDown animate__faster'
-          }
         });
       } else {
-        // Try to get error message from response
-        let errorMessage = 'Failed to submit license application';
-        try {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorData.error || errorMessage;
-          } else {
-            const textError = await response.text();
-            errorMessage = textError || errorMessage;
-          }
-        } catch (parseError) {
-          console.error('Error parsing response:', parseError);
-        }
-        
-        console.error('Server response:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-        
-        // Show error message
-        await Swal.fire({
-          title: 'Error!',
-          text: errorMessage,
-          icon: 'error',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#f97316',
-          background: isDarkMode ? '#1f2937' : '#ffffff',
-          color: isDarkMode ? '#ffffff' : '#333333',
-          iconColor: isDarkMode ? '#ef4444' : '#dc2626',
-          showClass: {
-            popup: 'animate__animated animate__fadeInUp animate__faster'
-          },
-          hideClass: {
-            popup: 'animate__animated animate__fadeOutDown animate__faster'
-          }
-        });
+        throw new Error(result.error || 'Failed to submit application');
       }
-    } catch (error) {
-      console.error('Network error:', error);
-      // Show network error message
+    } catch (error: any) {
       await Swal.fire({
-        title: 'Network Error!',
-        text: 'A network error occurred while submitting the application. Please check your connection and try again.',
+        title: 'Error!',
+        text: error.message || 'An error occurred while submitting the application. Please try again later.',
         icon: 'error',
         confirmButtonText: 'OK',
         confirmButtonColor: '#f97316',
         background: isDarkMode ? '#1f2937' : '#ffffff',
         color: isDarkMode ? '#ffffff' : '#333333',
         iconColor: isDarkMode ? '#ef4444' : '#dc2626',
-        showClass: {
-          popup: 'animate__animated animate__fadeInUp animate__faster'
-        },
-        hideClass: {
-          popup: 'animate__animated animate__fadeOutDown animate__faster'
-        }
       });
     }
   };

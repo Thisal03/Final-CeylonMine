@@ -198,35 +198,28 @@ export default function Signup() {
     }
 
     try {
-      console.log('Sending data:', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        username: formData.username,
-        email: formData.email,
-        password: formData.password
-      });
-
-      const response = await fetch('https://web-production-28de.up.railway.app/auth/signup', {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          username: formData.username,
-          email: formData.email,
-          password: formData.password
+          username: formData.username
         }),
       });
       
       const data = await response.json();
-      console.log('Response:', data);
-      
       if (response.ok) {
         setMessage('Signup successful! You can now login.');
         setIsError(false);
-        // Clear form
+        // Store user id and profile in localStorage
+        if (data.userId && data.profile) {
+          localStorage.setItem('user', JSON.stringify(data.profile));
+        }
         setFormData({
           firstName: '',
           lastName: '',
@@ -240,7 +233,6 @@ export default function Signup() {
         setIsError(true);
       }
     } catch (error) {
-      console.error('Error:', error);
       setMessage('Error connecting to server');
       setIsError(true);
     }

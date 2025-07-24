@@ -6,6 +6,7 @@ import Navbar from "../navbar/page";
 import { motion, useScroll, useTransform } from 'framer-motion';
 import * as THREE from 'three';
 import Cookies from 'js-cookie';
+import { useSearchParams } from 'next/navigation';
 
 // Update the interfaces to match backend responses
 interface ApplicationDetails {
@@ -62,7 +63,7 @@ export default function LicenseTracking() {
   const [language, setLanguage] = useState('en');
   const canvasRef = useRef(null);
   const scrollRef = useRef(null);
-  const [fileData, setFileData] = useState({
+  const [fileData, setFileData] = useState<{ file: File | null; description: string }>({
     file: null,
     description: ''
   });
@@ -72,14 +73,17 @@ export default function LicenseTracking() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStatus, setCurrentStatus] = useState<number>(1);
+  const searchParams = useSearchParams();
 
   // Add event types
-  const handleThemeChange = (event: CustomEvent) => {
-    setIsDarkMode(event.detail.isDarkMode);
+  const handleThemeChange = (event: Event) => {
+    const customEvent = event as CustomEvent;
+    setIsDarkMode(customEvent.detail.isDarkMode);
   };
 
-  const handleLanguageChange = (event: CustomEvent) => {
-    setLanguage(event.detail.language);
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent;
+    setLanguage(customEvent.detail.language);
   };
 
   // Add proper error type
@@ -120,222 +124,47 @@ export default function LicenseTracking() {
     const fetchApplicationData = async () => {
       try {
         setLoading(true);
-        const userId = Cookies.get("id");
-        
-        if (!userId) {
-          throw new Error("User ID not found in cookies");
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const miner_id = user.id;
+        const id = searchParams.get('id');
+        if (!id || !miner_id) {
+          throw new Error('Missing application id or user not logged in');
         }
-
-        console.log("Fetching data for user ID:", userId);
-
-        // Base URL for API
-        const baseUrl = "https://web-production-28de.up.railway.app";
-
-        // Set headers for all requests
-        const headers = {
-          "X-User-ID": userId,
-          "Content-Type": "application/json",
-        };
-
-        try {
-          console.log("Fetching application details...");
-          const appResponse = await fetch(
-            `${baseUrl}/unlicensedminer/application?user_id=${userId}`,
-            {
-              method: "GET",
-              headers,
-            }
-          );
-
-          console.log("Application response status:", appResponse.status);
-
-          if (!appResponse.ok) {
-            const errorText = await appResponse.text();
-            console.log("Application not found or other error:", errorText);
-            
-            // Set default values when application is not found
-            setApplicationDetails({
-              licenseId: "Applicants only",
-              applicantName: "Applicants only",
-              applicationType: "Applicants only",
-              submissionDate: "Applicants only",
-              location: "Applicants only",
-              estimatedCompletionDate: "Applicants only",
-              status: 0
-            });
-            setCurrentStatus(0);
-            setDocuments([]);
-            
-            // Don't throw error for 404, just return
-            if (appResponse.status === 404) {
-              setError("No application found for this user. Please submit a new application.");
-              return;
-            }
-            
-            // For other errors, throw
-            throw new Error(`API Error: ${appResponse.status} - ${errorText}`);
-          }
-
-          const appData = await appResponse.json();
-          console.log("Application data:", appData);
-
-          if (appData.application) {
-            // Convert status string to number
-            const statusNumber = getStatusNumber(appData.application.status);
-
-            setApplicationDetails({
-              licenseId: appData.application.exploration_license_no || 'N/A',
-              applicantName: appData.application.applicant_name || 'N/A',
-              applicationType: appData.application.minerals_to_be_mined || 'N/A',
-              submissionDate: new Date(appData.application.created_at).toLocaleDateString(),
-              location: appData.application.place_of_business || 'N/A',
-              estimatedCompletionDate: appData.application.status || 'N/A',
-              status: statusNumber
-            });
-            setCurrentStatus(statusNumber);
-          }
-
-          // Fetch documents
-          console.log("Fetching documents...");
-          const documentsResponse = await fetch(
-            `${baseUrl}/unlicensedminer/documents?user_id=${userId}`,
-            {
-              method: "GET",
-              headers,
-            }
-          );
-
-          console.log("Documents response status:", documentsResponse.status);
-
-          if (!documentsResponse.ok) {
-            const errorText = await documentsResponse.text();
-            console.error("Documents error response:", errorText);
-            throw new Error(`Documents API returned ${documentsResponse.status}: ${errorText}`);
-          }
-
-          const documentsData = await documentsResponse.json();
-          console.log("Documents data:", documentsData);
-          setDocuments(documentsData.documents || []);
-
-        } catch (fetchError) {
-          console.log("API fetch error:", fetchError);
-          
-          // Set default state
-          setApplicationDetails({
-            licenseId: "Not Available",
-            applicantName: "Error Loading Data",
-            applicationType: "N/A",
-            submissionDate: "N/A",
-            location: "N/A",
-            estimatedCompletionDate: "N/A",
-            status: 0
-          });
+        const response = await fetch('/api/application/get', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, miner_id })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.application) {
+          setError('No application found for this user. Please submit a new application.');
+          setApplicationDetails(null);
           setCurrentStatus(0);
-          setDocuments([]);
-          
-          // Set user-friendly error message
-          setError(
-            fetchError instanceof Error 
-              ? `Unable to load application: ${fetchError.message}` 
-              : "Unable to load application data"
-          );
+          return;
         }
-      } catch (err) {
-        console.error('Error in fetchApplicationData:', err);
-        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+        const app = data.application;
+        // Map status to number
+        const statusNumber = getStatusNumber(app.status);
+        setApplicationDetails({
+          licenseId: app.exploration_license_no || 'N/A',
+          applicantName: app.applicant_name || 'N/A',
+          applicationType: app.category || app.minerals_to_be_mined || 'N/A',
+          submissionDate: app.created_at ? new Date(app.created_at).toLocaleDateString() : 'N/A',
+          location: app.place_of_business || 'N/A',
+          estimatedCompletionDate: app.status || 'N/A',
+          status: statusNumber
+        });
+        setCurrentStatus(statusNumber);
+      } catch (err: any) {
+        setError(err.message || 'An unexpected error occurred');
+        setApplicationDetails(null);
+        setCurrentStatus(0);
       } finally {
         setLoading(false);
       }
     };
-
     fetchApplicationData();
-  }, []);
-
-  // Three.js Sand (Particle) Effect - same as contact page
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-    });
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
-
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(posArray, 3)
-    );
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.004,
-      color: isDarkMode ? 0xD2B48C : 0xFFD700, // Sand color
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    camera.position.z = 2;
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    function onDocumentMouseMove(event) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 100;
-      mouseY = (event.clientY - window.innerHeight / 2) / 100;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002; // Slowed down rotation
-      particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002; // Slowed down rotation
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const updateParticleColor = () => {
-      particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-    };
-
-    const themeChangeListener = () => {
-      updateParticleColor();
-    };
-    window.addEventListener('themeChange', themeChangeListener);
-
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      window.removeEventListener('themeChange', themeChangeListener);
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
-    };
-  }, [isDarkMode]);
+  }, [searchParams]);
 
   const { scrollYProgress } = useScroll({
     target: scrollRef,

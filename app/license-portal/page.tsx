@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import AuthGuard from '../components/AuthGuard';
+import { useRouter } from 'next/navigation';
 
 interface SuccessStory {
   title: string;
@@ -30,7 +31,10 @@ declare global {
 export default function LicensePortal() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedStory, setSelectedStory] = useState<SuccessStory | null>(null);
+  const [showCheckStatus, setShowCheckStatus] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const router = useRouter();
 
   // Initialize theme from localStorage on component mount
   useEffect(() => {
@@ -63,6 +67,33 @@ export default function LicensePortal() {
     return () => {
       window.removeEventListener('themeChange', handleThemeChange);
     };
+  }, []);
+
+  // Check user and application status on mount
+  useEffect(() => {
+    const checkApplication = async () => {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      const user = JSON.parse(storedUser);
+      if (user.role === 'miner') {
+        setShowCheckStatus(false);
+        return;
+      }
+      // Fetch application(s) for this user
+      const res = await fetch('/api/application/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ miner_id: user.id })
+      });
+      const data = await res.json();
+      if (data && data.applications && data.applications.length > 0) {
+        setShowCheckStatus(true);
+        setApplicationStatus(data.applications[0]); // or handle multiple
+      } else {
+        setShowCheckStatus(false);
+      }
+    };
+    checkApplication();
   }, []);
 
   // Toggle dark/light mode
@@ -154,91 +185,7 @@ export default function LicensePortal() {
       },
       
     
-    
   ];
-
-  // Enhanced 3D background effect (same as homepage)
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-      antialias: true,
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
-
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.004,
-      color: isDarkMode ? 0xD2B48C : 0xFFD700,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    camera.position.z = 2;
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    function onDocumentMouseMove(event: MouseEvent) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 100;
-      mouseY = (event.clientY - window.innerHeight / 2) / 100;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002;
-      particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002;
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // Function to update particle color based on theme
-    const updateParticleColor = () => {
-      particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-    };
-
-    // Listen for theme changes
-    const themeChangeListener = (event: ThemeChangeEvent) => {
-      if (event.detail && event.detail.hasOwnProperty('isDarkMode')) {
-        updateParticleColor();
-      }
-    };
-    
-    window.addEventListener('themeChange', themeChangeListener);
-
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      window.removeEventListener('themeChange', themeChangeListener);
-      particlesGeometry.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
-    };
-  }, [isDarkMode]);
 
   return (
     <AuthGuard>
@@ -275,25 +222,25 @@ export default function LicensePortal() {
                 Streamlined management of mining permits and licenses for optimal operational efficiency.
               </motion.p>
             </div>
-             {/* Check Status Section */}
-             <div className="flex items-center justify-between p-3 rounded-lg shadow-sm border border-gray-200 max-w-sm mx-auto">
-       <div className="flex-1">
-         <h3 className="text-base font-semibold mb-1">Check Form Status</h3>
-         <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-           View your submission status
-         </p>
-       </div>
-       <Link href="/unlicense" legacyBehavior>
-         <a className={`flex items-center justify-center px-4 py-2 rounded text-sm font-medium ${
-           isDarkMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-amber-500 hover:bg-amber-600'
-         } text-white transition-colors`}>
-           Status
-           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-           </svg>
-         </a>
-       </Link>
-     </div><br></br><br></br>
+            {/* Check Status Section */}
+            {showCheckStatus && (
+              <div className="flex items-center justify-between p-3 rounded-lg shadow-sm border border-gray-200 max-w-sm mx-auto">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold mb-1">Check Form Status</h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>View your submission status</p>
+                </div>
+                <button
+                  className={`flex items-center justify-center px-4 py-2 rounded text-sm font-medium ${isDarkMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-amber-500 hover:bg-amber-600'} text-white transition-colors`}
+                  onClick={() => router.push(`/unlicense?status=${encodeURIComponent(applicationStatus?.status ?? '')}&id=${encodeURIComponent(applicationStatus?.id ?? '')}`)}
+                >
+                  Status
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <br></br><br></br>
 
             {/* License Cards Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">

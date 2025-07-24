@@ -15,14 +15,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-      
       const storedUser = localStorage.getItem('user');
-      
-      if (token && storedUser) {
+      if (storedUser) {
         try {
           setIsAuthenticated(true);
         } catch (e) {

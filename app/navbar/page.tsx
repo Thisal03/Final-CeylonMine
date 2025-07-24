@@ -49,27 +49,40 @@ export default function Navbar() {
 
   // Enhanced auth state check
   useEffect(() => {
-    const checkAuth = () => {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-      
+    const checkAuth = async () => {
       const storedUser = localStorage.getItem('user');
-      
-      if (token && storedUser) {
+      let userId = null;
+      if (storedUser) {
         try {
           const userData = JSON.parse(storedUser);
-          setIsLoggedIn(true);
-          setUserData(userData);
-          setAuthLanguage(language); // Update auth text language
+          userId = userData.id;
         } catch (e) {
           handleLogout();
         }
-      } else {
-        setIsLoggedIn(false);
-        setUserData(null);
       }
+      if (userId) {
+        // Fetch latest profile from backend
+        try {
+          const res = await fetch('/api/auth/me', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+          });
+          const result = await res.json();
+          if (result.profile) {
+            setIsLoggedIn(true);
+            setUserData(result.profile);
+            localStorage.setItem('user', JSON.stringify(result.profile));
+            setAuthLanguage(language);
+            return;
+          }
+        } catch (e) {
+          // fallback to logout
+          handleLogout();
+        }
+      }
+      setIsLoggedIn(false);
+      setUserData(null);
     };
 
     checkAuth();
@@ -388,12 +401,8 @@ export default function Navbar() {
                       `}
                     >
                       <div className="px-4 py-2">
-                        <p className={`text-sm font-medium ${isDarkMode ? 'text-[#E6F1FF]' : 'text-gray-900'}`}>
-                          {getDisplayName()}
-                        </p>
-                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {userData?.email}
-                        </p>
+                        <p className={`text-sm font-medium ${isDarkMode ? 'text-[#E6F1FF]' : 'text-gray-900'}`}>{getDisplayName()}</p>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{userData?.email}</p>
                       </div>
                       <div className="border-t border-gray-700 my-1"></div>
                       {userData?.role === 'miner' && (

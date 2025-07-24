@@ -125,91 +125,6 @@ export default function TypeALicense() {
     };
   }, []);
 
-  // Three.js Sand (Particle) Effect
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-    });
-
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
-
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 5;
-    }
-    particlesGeometry.setAttribute(
-      'position',
-      new THREE.BufferAttribute(posArray, 3)
-    );
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.004,
-      color: isDarkMode ? 0xD2B48C : 0xFFD700, // Sand color
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-
-    camera.position.z = 2;
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    function onDocumentMouseMove(event: MouseEvent) {
-      mouseX = (event.clientX - window.innerWidth / 2) / 100;
-      mouseY = (event.clientY - window.innerHeight / 2) / 100;
-    }
-    document.addEventListener('mousemove', onDocumentMouseMove);
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-    window.addEventListener('resize', onWindowResize);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002; // Slowed down rotation
-      particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002; // Slowed down rotation
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const updateParticleColor = () => {
-      particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-    };
-
-    const themeChangeListener = () => {
-      updateParticleColor();
-    };
-    window.addEventListener('themeChange', themeChangeListener);
-
-    return () => {
-      document.removeEventListener('mousemove', onDocumentMouseMove);
-      window.removeEventListener('resize', onWindowResize);
-      window.removeEventListener('themeChange', themeChangeListener);
-      if (particlesGeometry) particlesGeometry.dispose();
-      if (particlesMaterial) particlesMaterial.dispose();
-      if (renderer) renderer.dispose();
-    };
-  }, [isDarkMode]);
 
   // Validation function
   const validateField = (name: string, value: string | File | null): string => {
@@ -347,8 +262,6 @@ export default function TypeALicense() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form before submission
     if (!validateForm()) {
       await Swal.fire({
         title: 'Validation Error',
@@ -361,86 +274,40 @@ export default function TypeALicense() {
       });
       return;
     }
-
     try {
-      // Get user ID from cookies
-      const userId = Cookies.get("id");
-      if (!userId) {
-        throw new Error("User ID not found in cookies");
-      }
-
-      console.log("Submitting form for user ID:", userId);
-
-      // Base URL for API
-      const baseUrl = "https://web-production-28de.up.railway.app";
-
-      // Set headers with user ID
-      const headers = {
-        "X-User-ID": userId,
-        "Accept": "application/json",
-      };
-
-      const data = new FormData();
-      data.append('licenseType', 'type-a');
-
-      // Append form data
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null) {
-          data.append(key, value);
-        }
-      });
-
-      const response = await fetch(`${baseUrl}/license/submit`, {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) throw new Error('User not logged in');
+      const payload = { ...formData, miner_id: user.id, category: 'A' };
+      const response = await fetch('/api/application/submit', {
         method: 'POST',
-        headers: headers,
-        body: data,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Form submission error response:", errorText);
-        throw new Error(`API returned ${response.status}: ${errorText}`);
-      }
-
       const result = await response.json();
-      console.log("Form submission result:", result);
-
-      // Success message
-      await Swal.fire({
-        title: 'Success!',
-        text: 'Your license application has been submitted successfully.',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#f97316',
-        background: isDarkMode ? '#1f2937' : '#ffffff',
-        color: isDarkMode ? '#ffffff' : '#333333',
-        iconColor: isDarkMode ? '#fbbf24' : '#f97316',
-        showClass: {
-          popup: 'animate__animated animate__fadeInUp animate__faster'
-        },
-        hideClass: {
-          popup: 'animate__animated animate__fadeOutDown animate__faster'
-        }
-      });
-    } catch (error) {
-      console.error("Form submission error:", error);
-
-      // Show error message
+      if (response.ok) {
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Your license application has been submitted successfully.',
+          icon: 'success',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#f97316',
+          background: isDarkMode ? '#1f2937' : '#ffffff',
+          color: isDarkMode ? '#ffffff' : '#333333',
+          iconColor: isDarkMode ? '#fbbf24' : '#f97316',
+        });
+      } else {
+        throw new Error(result.error || 'Failed to submit application');
+      }
+    } catch (error: any) {
       await Swal.fire({
         title: 'Error!',
-        text: 'An error occurred while submitting the application. Please try again later.',
+        text: error.message || 'An error occurred while submitting the application. Please try again later.',
         icon: 'error',
         confirmButtonText: 'OK',
         confirmButtonColor: '#f97316',
         background: isDarkMode ? '#1f2937' : '#ffffff',
         color: isDarkMode ? '#ffffff' : '#333333',
         iconColor: isDarkMode ? '#ef4444' : '#dc2626',
-        showClass: {
-          popup: 'animate__animated animate__fadeInUp animate__faster'
-        },
-        hideClass: {
-          popup: 'animate__animated animate__fadeOutDown animate__faster'
-        }
       });
     }
   };
@@ -523,7 +390,7 @@ export default function TypeALicense() {
       <div className="relative z-10 min-h-screen pt-32 pb-16">
         <div className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
           <h1 className={`text-3xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            IML Type B License Application
+            IML Type A License Application
           </h1>
           <div className={`${isDarkMode ? 'bg-gray-900 bg-opacity-70' : 'bg-white'} shadow-lg rounded-lg p-6`}>
             <form onSubmit={handleSubmit} className="space-y-8">
