@@ -188,7 +188,7 @@ export function LicenseTracking() {
       licenseDetails: "License Application Details",
       licenseId: "License ID",
       applicantName: "Applicant Name",
-      applicationType: "Minerals",
+      applicationType: "Category",
       submissionDate: "Submission Date",
       location: "Location",
       estimatedCompletion: "Status ",
