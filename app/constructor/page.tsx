@@ -381,8 +381,6 @@ export default function LicensedPage() {
                     ? "Loading..."
                     : licenseData?.status || (userRole === "miner" ? t.inactive : t.active)}
                 </p>
-                {/* Show role for debug/demo */}
-                <span className="ml-2 text-xs text-gray-400">[{userRole}]</span>
               </div>
               <p
                 className={`mt-2 ${
