@@ -137,7 +137,7 @@ export default function SignupPage() {
 
   return (
     <div className={`relative min-h-screen ${
-      isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'
+        isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'
     } overflow-hidden`}>
       <Head>
         <title>Sign Up | CeylonMine</title>
@@ -162,25 +162,25 @@ export default function SignupPage() {
             transition={{ duration: 0.6 }}
           >
             <div className="text-center mb-8">
-              <motion.h1
-                className="text-3xl md:text-4xl font-bold mb-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-              >
+            <motion.h1
+                className="text-2xl font-bold mb-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
                 {t.joinCeylonMine}
-              </motion.h1>
-              <motion.p
+            </motion.h1>
+            <motion.p
                 className={`text-sm ${
                   isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                }`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              }`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.1 }}
-              >
+            >
                 {t.signupDescription}
-              </motion.p>
-            </div>
+            </motion.p>
+          </div>
 
             {/* Supabase Auth UI */}
             <div className="space-y-6">
@@ -283,12 +283,12 @@ export default function SignupPage() {
                 >
                   {t.haveAccount}
                 </Link>
-              </div>
-            </div>
-          </motion.div>
+                  </div>
+                </div>
+            </motion.div>
         </div>
       </main>
-
+     
       {/* Three.js Canvas Background */}
       <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none" />
     </div>

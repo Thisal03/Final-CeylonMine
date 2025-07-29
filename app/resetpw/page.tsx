@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Head from 'next/head';
 import Navbar from "../navbar/page";
-import { motion } from 'framer-motion';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../utility/supabase';
+import Link from 'next/link';
 
 interface ThemeChangeEvent extends CustomEvent {
   detail: {
@@ -24,6 +26,7 @@ export default function ForgotPasswordPage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [language, setLanguage] = useState<'en' | 'si'>('en');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const handleThemeChange = (event: ThemeChangeEvent) => {
@@ -59,6 +62,20 @@ export default function ForgotPasswordPage() {
       window.removeEventListener('languageChange', handleLanguageChange as EventListener);
     };
   }, []);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session?.user) {
+        // Handle password recovery success
+        console.log('Password recovery successful');
+        // Redirect to login page after successful password reset
+        router.push('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   const translations = {
     en: {
@@ -161,7 +178,7 @@ export default function ForgotPasswordPage() {
             transition={{ duration: 0.6 }}
           >
             <motion.h1
-              className="text-3xl md:text-4xl font-bold mb-4 text-center"
+              className="text-2xl font-bold mb-3 text-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -170,7 +187,7 @@ export default function ForgotPasswordPage() {
             </motion.h1>
             
             <motion.p
-              className={`text-lg max-w-3xl mx-auto mb-8 text-center ${
+              className={`text-sm max-w-3xl mx-auto mb-6 text-center ${
                 isDarkMode ? 'opacity-80' : 'opacity-90'
               }`}
               initial={{ opacity: 0, y: 20 }}
@@ -187,6 +204,7 @@ export default function ForgotPasswordPage() {
                 appearance={appearance}
                 view="forgotten_password"
                 redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login'}
+                showLinks={false}
                 localization={{
                   variables: {
                     forgotten_password: {
@@ -204,16 +222,18 @@ export default function ForgotPasswordPage() {
             
             {/* Custom Links */}
             <div className="text-center mt-6">
-              <a href="/login" className="text-orange-500 hover:text-orange-600 font-medium">
+              <Link 
+                href="/login" 
+                className={`text-sm hover:underline ${
+                  isDarkMode ? 'text-amber-400 hover:text-amber-300' : 'text-orange-600 hover:text-orange-500'
+                }`}
+              >
                 {t.backToLogin}
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>
       </main>
-
-      {/* Three.js Canvas Background */}
-      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full z-0" />
     </div>
   );
 }

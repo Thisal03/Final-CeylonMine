@@ -137,7 +137,7 @@ export default function LoginPage() {
           >
             <div className="text-center mb-8">
               <motion.h1
-                className="text-3xl md:text-4xl font-bold mb-4"
+                className="text-2xl font-bold mb-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
