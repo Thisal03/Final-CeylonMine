@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import Head from 'next/head';
-import Navbar from "../navbar/page";
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '../utility/supabase';
+import { supabase } from '../../utility/supabase';
+import Head from 'next/head';
+import Navbar from "../../navbar/page";
+import { motion } from 'framer-motion';
 
 interface ThemeChangeEvent extends CustomEvent {
   detail: {
@@ -20,10 +21,13 @@ interface LanguageChangeEvent extends CustomEvent {
   };
 }
 
-export default function ForgotPasswordPage() {
+export default function ResetPasswordPage() {
+  const params = useParams();
+  const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [language, setLanguage] = useState<'en' | 'si'>('en');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
   useEffect(() => {
     const handleThemeChange = (event: ThemeChangeEvent) => {
@@ -60,18 +64,36 @@ export default function ForgotPasswordPage() {
     };
   }, []);
 
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Handle password recovery
+        setMessage('Password updated successfully!');
+        setMessageType('success');
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
   const translations = {
     en: {
-      resetPassword: "Reset Password",
-      resetPasswordDescription: "Enter your email address below and we'll send you a link to reset your password.",
+      updatePassword: "Update Password",
+      updatePasswordDescription: "Enter your new password below to complete the password reset.",
       backToLogin: "Back to Login",
-      allRightsReserved: "All rights reserved.",
+      passwordUpdated: "Password updated successfully! Redirecting to login...",
+      errorUpdating: "Error updating password. Please try again.",
     },
     si: {
-      resetPassword: "මුරපදය යළි සකසන්න",
-      resetPasswordDescription: "ඔබගේ විද්‍යුත් තැපැල් ලිපිනය පහතින් ඇතුළත් කරන්න, අපි ඔබට මුරපදය යළි පිහිටුවීම සඳහා සබැඳියක් යවන්නෙමු.",
+      updatePassword: "මුරපදය යාවත්කාලීන කරන්න",
+      updatePasswordDescription: "මුරපදය යළි පිහිටුවීම සම්පූර්ණ කිරීමට ඔබගේ නව මුරපදය පහතින් ඇතුළත් කරන්න.",
       backToLogin: "ලොග් වීමට ආපසු යන්න",
-      allRightsReserved: "සියලු හිමිකම් ඇවිරිණි.",
+      passwordUpdated: "මුරපදය සාර්ථකව යාවත්කාලීන කරන ලදී! පිවිසුමට යළි-යොමු කරමින්...",
+      errorUpdating: "මුරපදය යාවත්කාලීන කිරීමේ දෝෂයක්. කරුණාකර නැවත උත්සාහ කරන්න.",
     }
   };
 
@@ -133,16 +155,14 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div
-      className={`relative min-h-screen ${
-        isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'
-      } overflow-hidden`}
-    >
+    <div className={`relative min-h-screen ${
+      isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'
+    } overflow-hidden`}>
       <Head>
-        <title>Reset Password | CeylonMine</title>
+        <title>Update Password | CeylonMine</title>
         <meta
           name="description"
-          content="Reset your password for CeylonMine account"
+          content="Update your password for CeylonMine account"
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -166,7 +186,7 @@ export default function ForgotPasswordPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              {t.resetPassword}
+              {t.updatePassword}
             </motion.h1>
             
             <motion.p
@@ -177,29 +197,38 @@ export default function ForgotPasswordPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              {t.resetPasswordDescription}
+              {t.updatePasswordDescription}
             </motion.p>
             
-            {/* Supabase Auth UI for Password Reset */}
+            {/* Supabase Auth UI for Password Update */}
             {typeof window !== 'undefined' && (
               <Auth
                 supabaseClient={supabase}
                 appearance={appearance}
-                view="forgotten_password"
+                view="update_password"
                 redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login'}
                 localization={{
                   variables: {
-                    forgotten_password: {
-                      button_label: language === 'si' ? 'යළි පිහිටුවීමේ සබැඳිය යවන්න' : 'Send reset link',
-                      loading_button_label: language === 'si' ? 'යවමින්...' : 'Sending...',
-                      link_text: language === 'si' ? 'මුරපදය අමතක වුණාද?' : 'Forgot your password?',
-                      confirmation_text: language === 'si' ? 'ඔබගේ විද්‍යුත් තැපැල් ලිපිනය පරීක්ෂා කරන්න' : 'Check your email for the reset link',
-                      email_label: language === 'si' ? 'විද්‍යුත් තැපැල් ලිපිනය' : 'Email',
-                      email_input_placeholder: language === 'si' ? 'ඔබගේ විද්‍යුත් තැපැල් ලිපිනය' : 'Your email address',
+                    update_password: {
+                      button_label: language === 'si' ? 'මුරපදය යාවත්කාලීන කරන්න' : 'Update password',
+                      loading_button_label: language === 'si' ? 'යාවත්කාලීන කරමින්...' : 'Updating...',
+                      password_label: language === 'si' ? 'නව මුරපදය' : 'New password',
+                      password_input_placeholder: language === 'si' ? 'ඔබගේ නව මුරපදය' : 'Your new password',
+                      confirmation_text: language === 'si' ? 'මුරපදය සාර්ථකව යාවත්කාලීන කරන ලදී' : 'Your password has been updated',
                     },
                   },
                 }}
               />
+            )}
+            
+            {message && (
+              <div className={`mt-4 p-4 rounded-md ${
+                messageType === 'success'
+                  ? (isDarkMode ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800')
+                  : (isDarkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800')
+              }`}>
+                {message}
+              </div>
             )}
             
             <div className="text-center mt-6">
@@ -210,9 +239,6 @@ export default function ForgotPasswordPage() {
           </motion.div>
         </div>
       </main>
-
-      {/* Three.js Canvas Background */}
-      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full z-0" />
     </div>
   );
-}
+} 

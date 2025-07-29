@@ -1,24 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import * as THREE from 'three';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from "../navbar/page";
-import Cookies from "js-cookie";
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '../utility/supabase';
 
 export default function LoginPage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [language, setLanguage] = useState('en');
   const canvasRef = useRef(null);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [message, setMessage] = useState('');
-  const [isError, setIsError] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -56,165 +51,63 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Three.js Sand (Particle) Effect
-  // useEffect(() => {
-  //   if (!canvasRef.current) return;
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify({
+          id: session.user.id,
+          email: session.user.email,
+          firstName: session.user.user_metadata?.full_name?.split(' ')[0] || '',
+          lastName: session.user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+          username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
+          role: 'miner' // Default role, you can fetch from your users table
+        }));
+        
+        // Dispatch auth change event
+        window.dispatchEvent(new CustomEvent('authChange'));
+        
+        // Redirect to home page
+        router.push('/');
+      }
+    });
 
-  //   const scene = new THREE.Scene();
-  //   const camera = new THREE.PerspectiveCamera(
-  //     75,
-  //     window.innerWidth / window.innerHeight,
-  //     0.1,
-  //     1000
-  //   );
-  //   const renderer = new THREE.WebGLRenderer({
-  //     canvas: canvasRef.current,
-  //     alpha: true,
-  //   });
-
-  //   renderer.setSize(window.innerWidth, window.innerHeight);
-  //   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  //   const particlesGeometry = new THREE.BufferGeometry();
-  //   const particlesCount = 5000;
-  //   const posArray = new Float32Array(particlesCount * 3);
-
-  //   for (let i = 0; i < particlesCount * 3; i++) {
-  //     posArray[i] = (Math.random() - 0.5) * 5;
-  //   }
-  //   particlesGeometry.setAttribute(
-  //     'position',
-  //     new THREE.BufferAttribute(posArray, 3)
-  //   );
-
-  //   const particlesMaterial = new THREE.PointsMaterial({
-  //     size: 0.004,
-  //     color: isDarkMode ? 0xD2B48C : 0xFFD700, // Sand color
-  //     transparent: true,
-  //     blending: THREE.AdditiveBlending,
-  //   });
-
-  //   const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-  //   scene.add(particlesMesh);
-
-  //   camera.position.z = 2;
-
-  //   let mouseX = 0;
-  //   let mouseY = 0;
-
-  //   function onDocumentMouseMove(event: MouseEvent) {
-  //     mouseX = (event.clientX - window.innerWidth / 2) / 100;
-  //     mouseY = (event.clientY - window.innerHeight / 2) / 100;
-  //   }
-  //   document.addEventListener('mousemove', onDocumentMouseMove);
-
-  //   function onWindowResize() {
-  //     camera.aspect = window.innerWidth / window.innerHeight;
-  //     camera.updateProjectionMatrix();
-  //     renderer.setSize(window.innerWidth, window.innerHeight);
-  //   }
-  //   window.addEventListener('resize', onWindowResize);
-
-  //   const animate = () => {
-  //     requestAnimationFrame(animate);
-  //     particlesMesh.rotation.x += 0.0002 + mouseY * 0.0002;
-  //     particlesMesh.rotation.y += 0.0002 + mouseX * 0.0002;
-  //     renderer.render(scene, camera);
-  //   };
-  //   animate();
-
-  //   const updateParticleColor = () => {
-  //     particlesMaterial.color.set(isDarkMode ? 0xD2B48C : 0xFFD700);
-  //   };
-
-  //   const themeChangeListener = () => {
-  //     updateParticleColor();
-  //   };
-  //   window.addEventListener('themeChange', themeChangeListener);
-
-  //   return () => {
-  //     document.removeEventListener('mousemove', onDocumentMouseMove);
-  //     window.removeEventListener('resize', onWindowResize);
-  //     window.removeEventListener('themeChange', themeChangeListener);
-  //     particlesGeometry.dispose();
-  //     particlesMaterial.dispose();
-  //     renderer.dispose();
-  //   };
-  // }, [isDarkMode]);
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   const translations = {
     en: {
       login: "Login",
-      email: "Email Address",
+      email: "Email",
       password: "Password",
       loginButton: "Sign In",
-      forgotPassword: "Forgot your password?",
-      resetHere: "Reset it here",
       noAccount: "Don't have an account?",
-      signUp: "Sign up here",
-      allRightsReserved: "All rights reserved."
+      signup: "Sign up",
+      forgotPassword: "Forgot your password?",
+      resetPassword: "Reset Password",
+      or: "or",
+      continueWithGoogle: "Continue with Google",
+      welcomeBack: "Welcome Back",
+      loginDescription: "Sign in to your CeylonMine account to access your mining dashboard."
     },
     si: {
-      login: "පිවිසෙන්න",
-      email: "විද්‍යුත් තැපැල් ලිපිනය",
-      password: "රහස් පදය",
+      login: "පිවිසුම",
+      email: "විද්‍යුත් තැපෑල",
+      password: "මුරපදය",
       loginButton: "පිවිසෙන්න",
-      forgotPassword: "රහස් පදය අමතක වුණාද?",
-      resetHere: "මෙතැනින් යළි සකසන්න",
       noAccount: "ගිණුමක් නැද්ද?",
-      signUp: "මෙතැනින් ලියාපදිංචි වන්න",
-      allRightsReserved: "සියලු හිමිකම් ඇවිරිණි."
+      signup: "ලියාපදිංචි වන්න",
+      forgotPassword: "මුරපදය අමතක වුණාද?",
+      resetPassword: "මුරපදය යළි සකස් කරන්න",
+      or: "හෝ",
+      continueWithGoogle: "Google සමඟ ඉදිරියට",
+      welcomeBack: "නැවත සාදරයෙන් පිළිගනිමු",
+      loginDescription: "ඔබගේ පතල් උපකරණ පුවරුවට ප්‍රවේශ වීමට ඔබගේ CeylonMine ගිණුමට පිවිසෙන්න."
     }
   };
 
-  // Fix for the language indexing issue
   const t = translations[language as keyof typeof translations];
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setMessage('');
-    setIsError(false);
-
-    try {
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setMessage('Login successful! Redirecting...');
-        setIsError(false);
-        // Store user id and profile in localStorage
-        if (data.userId && data.profile) {
-          localStorage.setItem('user', JSON.stringify(data.profile));
-        }
-        setTimeout(() => {
-          router.push('/');
-        }, 1000);
-      } else {
-        const errorMessage = data.error || data.message || 'Login failed. Please check your credentials.';
-        setMessage(errorMessage);
-        setIsError(true);
-      }
-    } catch (error) {
-      setMessage('Incorrect Credentials. Try Again.');
-      setIsError(true);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
 
   return (
     <div className={`relative min-h-screen ${
@@ -249,89 +142,137 @@ export default function LoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
               >
-                {t.login}
+                {t.welcomeBack}
               </motion.h1>
+              <motion.p
+                className={`text-sm ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1 }}
+              >
+                {t.loginDescription}
+              </motion.p>
             </div>
 
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2">
-                  {t.email}
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-md focus:outline-none ${
-                    isDarkMode 
-                      ? 'bg-gray-800 border border-gray-700 focus:border-orange-500' 
-                      : 'bg-gray-50 border border-gray-200 focus:border-orange-500'
-                  }`}
-                  placeholder="name@example.com"
-                  required
+            {/* Supabase Auth UI */}
+            <div className="space-y-6">
+              {typeof window !== 'undefined' && (
+                <Auth
+                  supabaseClient={supabase}
+                  appearance={{
+                    theme: ThemeSupa,
+                    variables: {
+                      default: {
+                        colors: {
+                          brand: isDarkMode ? '#f59e0b' : '#ea580c',
+                          brandAccent: isDarkMode ? '#d97706' : '#dc2626',
+                          brandButtonText: 'white',
+                          defaultButtonBackground: isDarkMode ? '#374151' : '#f3f4f6',
+                          defaultButtonBackgroundHover: isDarkMode ? '#4b5563' : '#e5e7eb',
+                          defaultButtonBorder: isDarkMode ? '#6b7280' : '#d1d5db',
+                          defaultButtonText: isDarkMode ? '#f9fafb' : '#374151',
+                          dividerBackground: isDarkMode ? '#374151' : '#e5e7eb',
+                          inputBackground: isDarkMode ? '#1f2937' : '#ffffff',
+                          inputBorder: isDarkMode ? '#4b5563' : '#d1d5db',
+                          inputBorderHover: isDarkMode ? '#6b7280' : '#9ca3af',
+                          inputBorderFocus: isDarkMode ? '#f59e0b' : '#ea580c',
+                          inputText: isDarkMode ? '#f9fafb' : '#111827',
+                          inputLabelText: isDarkMode ? '#d1d5db' : '#6b7280',
+                          inputPlaceholder: isDarkMode ? '#9ca3af' : '#9ca3af',
+                          messageText: isDarkMode ? '#f9fafb' : '#111827',
+                          messageTextDanger: isDarkMode ? '#fca5a5' : '#dc2626',
+                          anchorTextColor: isDarkMode ? '#f59e0b' : '#ea580c',
+                          anchorTextHoverColor: isDarkMode ? '#d97706' : '#dc2626',
+                        },
+                        space: {
+                          inputPadding: '12px',
+                          buttonPadding: '12px',
+                        },
+                        fontSizes: {
+                          baseBodySize: '14px',
+                          baseInputSize: '14px',
+                          baseLabelSize: '14px',
+                          baseButtonSize: '14px',
+                        },
+                        fonts: {
+                          bodyFontFamily: 'Inter, system-ui, sans-serif',
+                          buttonFontFamily: 'Inter, system-ui, sans-serif',
+                          inputFontFamily: 'Inter, system-ui, sans-serif',
+                          labelFontFamily: 'Inter, system-ui, sans-serif',
+                        },
+                        borderWidths: {
+                          buttonBorderWidth: '1px',
+                          inputBorderWidth: '1px',
+                        },
+                        radii: {
+                          borderRadiusButton: '8px',
+                          buttonBorderRadius: '8px',
+                          inputBorderRadius: '8px',
+                        },
+                      },
+                    },
+                  }}
+                  providers={['google']}
+                  redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/` : '/'}
+                  showLinks={false}
+                  view="sign_in"
+                  localization={{
+                    variables: {
+                      sign_in: {
+                        email_label: t.email,
+                        password_label: t.password,
+                        button_label: t.loginButton,
+                        loading_button_label: 'Signing in...',
+                        social_provider_text: t.continueWithGoogle,
+                        link_text: t.noAccount,
+                      },
+                      sign_up: {
+                        email_label: t.email,
+                        password_label: t.password,
+                        button_label: 'Sign up',
+                        loading_button_label: 'Signing up...',
+                        social_provider_text: t.continueWithGoogle,
+                        link_text: 'Already have an account?',
+                      },
+                      forgotten_password: {
+                        email_label: t.email,
+                        button_label: t.resetPassword,
+                        loading_button_label: 'Sending reset instructions...',
+                        link_text: 'Back to sign in',
+                      },
+                    },
+                  }}
                 />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-2">
-                  {t.password}
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-md focus:outline-none ${
-                    isDarkMode 
-                      ? 'bg-gray-800 border border-gray-700 focus:border-orange-500' 
-                      : 'bg-gray-50 border border-gray-200 focus:border-orange-500'
-                  }`}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-              <div>
-                <motion.button
-                  type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md text-lg font-medium transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {t.loginButton}
-                </motion.button>
-              </div>
-
-              {message && (
-                <div className={`mt-4 p-4 rounded-md ${
-                  isError 
-                    ? (isDarkMode ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800')
-                    : (isDarkMode ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800')
-                }`}>
-                  {message}
-                </div>
               )}
-              
-              <div className="text-center mt-4">
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t.forgotPassword} <Link href="/resetpw" className="text-orange-500 hover:text-orange-600">{t.resetHere}</Link>
-                </p>
-                <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t.noAccount} <Link href="/sign" className="text-orange-500 hover:text-orange-600">{t.signUp}</Link>
-                </p>
+
+              {/* Custom Links */}
+              <div className="text-center space-y-4">
+                <Link 
+                  href="/sign" 
+                  className={`block text-sm hover:underline ${
+                    isDarkMode ? 'text-amber-400 hover:text-amber-300' : 'text-orange-600 hover:text-orange-500'
+                  }`}
+                >
+                  {t.signup}
+                </Link>
+                <Link 
+                  href="/resetpw" 
+                  className={`block text-sm hover:underline ${
+                    isDarkMode ? 'text-amber-400 hover:text-amber-300' : 'text-orange-600 hover:text-orange-500'
+                  }`}
+                >
+                  {t.forgotPassword}
+                </Link>
               </div>
-            </form>
+            </div>
           </motion.div>
         </div>
       </main>
 
-
       {/* Three.js Canvas Background */}
-      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full z-0" />
-
-     
+      <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none" />
     </div>
-    
   );
 }

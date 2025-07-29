@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import Navbar from '../navbar/page';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import * as THREE from 'three';
 import AuthGuard from '../components/AuthGuard';
 import { useRouter } from 'next/navigation';
 
