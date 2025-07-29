@@ -202,6 +202,7 @@ export default function ForgotPasswordPage() {
               />
             )}
             
+            {/* Custom Links */}
             <div className="text-center mt-6">
               <a href="/login" className="text-orange-500 hover:text-orange-600 font-medium">
                 {t.backToLogin}

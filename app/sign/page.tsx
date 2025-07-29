@@ -4,11 +4,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
-import Link from 'next/link';
 import Navbar from "../navbar/page";
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../utility/supabase';
+import Link from 'next/link';
 
 export default function SignupPage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -274,22 +274,14 @@ export default function SignupPage() {
               )}
 
               {/* Custom Links */}
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-4 mt-6">
                 <Link 
                   href="/login" 
                   className={`block text-sm hover:underline ${
                     isDarkMode ? 'text-amber-400 hover:text-amber-300' : 'text-orange-600 hover:text-orange-500'
                   }`}
                 >
-                  {t.login}
-                </Link>
-                <Link 
-                  href="/resetpw" 
-                  className={`block text-sm hover:underline ${
-                    isDarkMode ? 'text-amber-400 hover:text-amber-300' : 'text-orange-600 hover:text-orange-500'
-                  }`}
-                >
-                  {t.forgotPassword}
+                  {t.haveAccount}
                 </Link>
               </div>
             </div>
