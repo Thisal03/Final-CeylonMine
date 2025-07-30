@@ -10,7 +10,6 @@ import MiningStats from "../components/MiningStats";
 import ErrorBoundary from '../components/ErrorBoundary';
 import Navbar from "../navbar/page";
 import { motion, useScroll } from 'framer-motion'; // Removed unused useTransform
-import * as THREE from 'three';
 
 // Define translation types
 type TranslationLanguage = 'en' | 'si';

@@ -6,11 +6,12 @@ import { motion } from 'framer-motion'
 import { useState, useEffect, useRef, useMemo } from 'react'
 
 interface UserData {
+  id: string;
   firstName?: string;
   lastName?: string;
   email?: string;
   username?: string;
-  role?: string; // Add role property
+  role?: string;
 }
 
 export default function Navbar() {
@@ -51,33 +52,17 @@ export default function Navbar() {
   useEffect(() => {
     const checkAuth = async () => {
       const storedUser = localStorage.getItem('user');
-      let userId = null;
       if (storedUser) {
         try {
           const userData = JSON.parse(storedUser);
-          userId = userData.id;
-        } catch (e) {
-          handleLogout();
-        }
-      }
-      if (userId) {
-        // Fetch latest profile from backend
-        try {
-          const res = await fetch('/api/auth/me', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId })
-          });
-          const result = await res.json();
-          if (result.profile) {
+          if (userData.id) {
             setIsLoggedIn(true);
-            setUserData(result.profile);
-            localStorage.setItem('user', JSON.stringify(result.profile));
+            setUserData(userData);
             setAuthLanguage(language);
             return;
           }
         } catch (e) {
-          // fallback to logout
+          console.error('Error parsing user data:', e);
           handleLogout();
         }
       }
@@ -201,9 +186,12 @@ export default function Navbar() {
   // Get display name
   const getDisplayName = () => {
     if (userData && userData.firstName) {
-      return `${userData.firstName}`
+      return `${userData.firstName}`;
+    } else if (userData && userData.email) {
+      // Use email prefix as display name
+      return userData.email.split('@')[0];
     }
-    return authText.profile
+    return authText.profile;
   }
 
   // Framer Motion variants
