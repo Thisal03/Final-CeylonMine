@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Navbar from "../navbar/page";
 import { motion, useScroll, useTransform } from "framer-motion";
-import * as THREE from "three";
 import Cookies from "js-cookie";
 
 interface LicenseData {
